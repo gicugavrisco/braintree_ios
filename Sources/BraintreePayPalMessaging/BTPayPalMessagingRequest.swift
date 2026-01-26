@@ -6,7 +6,7 @@ import Foundation
 /// - Warning: This module is in beta. It's public API may change or be removed in future releases.
 public struct BTPayPalMessagingRequest {
 
-    var amount: Double?
+    var amount: String?
     var pageType: BTPayPalMessagingPageType?
     var offerType: BTPayPalMessagingOfferType?
     var buyerCountry: String?
@@ -24,7 +24,7 @@ public struct BTPayPalMessagingRequest {
     ///   - textAlignment: Text alignment option for a PayPal Message. Defaults to `.right`
     ///   - color: Text and logo color option for a PayPal Message. Defaults to `.black`
     public init(
-        amount: Double? = nil,
+        amount: String? = nil,
         pageType: BTPayPalMessagingPageType? = nil,
         offerType: BTPayPalMessagingOfferType? = nil,
         buyerCountry: String? = nil,

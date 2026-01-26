@@ -33,16 +33,58 @@ public class BTPayPalMessagingView: UIView {
 
     // MARK: - Public Method
 
-    /// Creates a view to be displayed to promote offers such as Pay Later and PayPal Credit to customers.
-    /// - Parameter request: an optional `BTPayPalMessagingRequest`
-    /// - Warning: use `BTPayPalMessagingDelegate` protocol to receive notifications for events
-    public func start(_ request: BTPayPalMessagingRequest = BTPayPalMessagingRequest()) {
+    public func start(_ source: BTPayPalMessagingSource) {
         PayPalMessageConfig.setGlobalAnalytics(
             integrationName: "BT_SDK",
-            integrationVersion: BTCoreConstants.braintreeSDKVersion
-        )
-        
+            integrationVersion: BTCoreConstants.braintreeSDKVersion)
+
         apiClient.sendAnalyticsEvent(BTPayPalMessagingAnalytics.started)
+
+        switch source {
+        case let .config(request):
+            startLoadind(request)
+
+        case let .data(data, request):
+
+            let messageData = PayPalMessageData(
+                clientID: data.configurationClientID,
+                environment: data.configurationEnvironment == "production" ? .live : .sandbox,
+                amount: request.amount,
+                pageType: request.pageType?.pageTypeRawValue,
+                offerType: request.offerType?.offerTypeRawValue)
+
+            messageData.buyerCountry = request.buyerCountry
+
+            let messageConfig = PayPalMessageConfig(
+                data: messageData,
+                style: PayPalMessageStyle(
+                    logoType: request.logoType.logoTypeRawValue,
+                    color: request.color.messageColorRawValue,
+                    textAlign: request.textAlignment.textAlignmentRawValue))
+
+            let configData = PayPalMessageConfigData(
+                offerType: data.offerType.offerTypeRawValue,
+                productGroup: data.productGroup.productGroupRawValue,
+                modalCloseButtonWidth: data.modalCloseButtonWidth,
+                modalCloseButtonHeight: data.modalCloseButtonHeight,
+                modalCloseButtonAvailWidth: data.modalCloseButtonAvailWidth,
+                modalCloseButtonAvailHeight: data.modalCloseButtonAvailHeight,
+                modalCloseButtonColor: data.modalCloseButtonColor,
+                modalCloseButtonColorType: data.modalCloseButtonColorType,
+                modalCloseButtonAlternativeText: data.modalCloseButtonAlternativeText,
+                defaultMainContent: data.defaultMainContent,
+                defaultMainAlternative: data.defaultMainAlternative,
+                defaultDisclaimer: data.defaultDisclaimer,
+                genericMainContent: data.genericMainContent,
+                genericMainAlternative: data.genericMainAlternative,
+                genericDisclaimer: data.genericDisclaimer,
+                logoPlaceholder: data.logoPlaceholder)
+
+            setupMessageView(with: .data(configData, config: messageConfig))
+        }
+    }
+
+    private func startLoadind(_ request: BTPayPalMessagingRequest) {
         apiClient.fetchOrReturnRemoteConfiguration { configuration, error in
             if let error {
                 self.notifyFailure(with: error)
@@ -78,15 +120,20 @@ public class BTPayPalMessagingView: UIView {
                 )
             )
 
-            self.setupMessageView(with: messageConfig)
+            self.setupMessageView(with: .config(messageConfig))
         }
     }
     
-    private func setupMessageView(with config: PayPalMessageConfig) {
+    private func setupMessageView(with payPalSource: PayPalMessageSource) {
         if let messageView {
-            messageView.setConfig(config)
+            messageView.setSource(payPalSource)
+
         } else {
-            let payPalMessageView = PayPalMessageView(config: config, stateDelegate: self, eventDelegate: self)
+            let payPalMessageView = PayPalMessageView(
+                source: payPalSource,
+                stateDelegate: self,
+                eventDelegate: self)
+
             payPalMessageView.translatesAutoresizingMaskIntoConstraints = false
             addSubview(payPalMessageView)
             
@@ -117,8 +164,8 @@ public extension BTPayPalMessagingView {
         private let apiClient: BTAPIClient
         private let delegate: BTPayPalMessagingDelegate?
 
-        private var request = BTPayPalMessagingRequest()
-        
+        private var source = BTPayPalMessagingSource.config(BTPayPalMessagingRequest())
+
         ///  Initializes a `BTPayPalMessagingView`.
         /// - Parameters:
         ///   - apiClient: The Braintree API client
@@ -126,11 +173,11 @@ public extension BTPayPalMessagingView {
         ///   - delegate: an optional `BTPayPalMessagingDelegate`
         public init(
             apiClient: BTAPIClient,
-            request: BTPayPalMessagingRequest = BTPayPalMessagingRequest(),
+            source: BTPayPalMessagingSource = .config(BTPayPalMessagingRequest()),
             delegate: BTPayPalMessagingDelegate? = nil
         ) {
             self.apiClient = apiClient
-            self.request = request
+            self.source = source
             self.delegate = delegate
         }
 
@@ -138,7 +185,7 @@ public extension BTPayPalMessagingView {
 
         public func makeUIView(context: Context) -> BTPayPalMessagingView {
             let payPalMessagingView = BTPayPalMessagingView(apiClient: apiClient)
-            payPalMessagingView.start(request)
+            payPalMessagingView.start(source)
             payPalMessagingView.delegate = delegate
             return payPalMessagingView
         }

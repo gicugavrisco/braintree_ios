@@ -1,4 +1,4 @@
-// swift-tools-version:5.9
+// swift-tools-version:5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -40,10 +40,6 @@ let package = Package(
             targets: ["BraintreePayPalMessaging"]
         ),
         .library(
-            name: "BraintreePayPalNativeCheckout",
-            targets: ["BraintreePayPalNativeCheckout"]
-        ),
-        .library(
             name: "BraintreeSEPADirectDebit",
             targets: ["BraintreeSEPADirectDebit"]
         ),
@@ -58,11 +54,15 @@ let package = Package(
         .library(
             name: "BraintreeVenmo",
             targets: ["BraintreeVenmo"]
-        ),
+        )
+    ],
+    dependencies: [
+        .package(
+            url: "https://github.com/gicugavrisco/paypal-messages-ios.git",
+            branch: "feature/caching"
+        )
     ],
     targets: [
-        // Targets are the basic building blocks of a package. A target can define a module or a test suite.
-        // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .target(
             name: "BraintreeAmericanExpress",
             dependencies: ["BraintreeCore"],
@@ -100,18 +100,10 @@ let package = Package(
         ),
         .target(
             name: "BraintreePayPalMessaging",
-            dependencies: ["BraintreeCore", "PayPalMessages"],
-            resources: [.copy("PrivacyInfo.xcprivacy")]
-        ),
-        .binaryTarget(
-            name: "PayPalMessages",
-            url: "https://github.com/paypal/paypal-messages-ios/releases/download/1.0.0/PayPalMessages.xcframework.zip",
-            checksum: "565ab72a3ab75169e41685b16e43268a39e24217a12a641155961d8b10ffe1b4"
-        ),
-        .target(
-            name: "BraintreePayPalNativeCheckout",
-            dependencies: ["BraintreeCore", "BraintreePayPal", "PayPalCheckout"],
-            path: "Sources/BraintreePayPalNativeCheckout",
+            dependencies: [
+                "BraintreeCore",
+                .product(name: "PayPalMessages", package: "paypal-messages-ios")
+            ],
             resources: [.copy("PrivacyInfo.xcprivacy")]
         ),
         .binaryTarget(

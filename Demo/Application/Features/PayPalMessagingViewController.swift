@@ -6,7 +6,7 @@ class PayPalMessagingViewController: PaymentButtonBaseViewController {
     lazy var payPalMessagingView = BTPayPalMessagingView(apiClient: apiClient)
 
     let request = BTPayPalMessagingRequest(
-        amount: 2.00,
+        amount: "2.00",
         offerType: .payLaterLongTerm,
         buyerCountry: "US",
         logoType: .primary,
@@ -19,7 +19,7 @@ class PayPalMessagingViewController: PaymentButtonBaseViewController {
 
         title = "PayPal Messaging"
         payPalMessagingView.delegate = self
-        payPalMessagingView.start(request)
+        payPalMessagingView.start(.config(request))
     }
 
     private func setupView() {
